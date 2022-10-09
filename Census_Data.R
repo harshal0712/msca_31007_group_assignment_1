@@ -63,19 +63,26 @@ census_wide_cleaned_2015_2019 <- census_tidy_cleaned_2015_2019 %>%
 #str(dc_income_wide_2015)
 
 #*********** d) Rename the remaining columns *************************************
-#*DP02_0065P -> propbac
-#*DP03_0062  -> medhhinc
-#*DP03_0096P -> propcov
-#*DP03_0128P -> proppov
-#*DP04_0047P -> proprent
-#*DP05_0001  -> totpop
-#*DP05_0018  -> medage
+#*DP02_0065P -> propbac  (Bachelor's degree)
+#*DP03_0062  -> medhhinc (Median household income)
+#*DP03_0096P -> propcov  (Health insurance coverage)
+#*DP03_0128P -> proppov  (PERCENTAGE OF FAMILIES AND PEOPLE WHOSE INCOME IN THE PAST 12 MONTHS IS BELOW THE POVERTY LEVEL)
+#*DP04_0047P -> proprent (Renter-occupied)
+#*DP05_0001  -> totpop   (Total population)
+#*DP05_0018  -> medage   (Median age)
 
 census_wide_renamed_2015_2019 <- census_wide_cleaned_2015_2019 %>%  
   rename('propbac' = 'DP02_0065P', 'medhhinc' = 'DP03_0062', 
          'propcov' = 'DP03_0096P', 'proppov' = 'DP03_0128P', 
          'proprent' = 'DP04_0047P', 'totpop' = 'DP05_0001', 
          'medage' = 'DP05_0018')
+
+
+##########################################STEP 4#####################################################################
+#Create a map of tract-level baccalaureate attainment rates within Cook County. Feel free to
+#use either base:: R commands such as plot() or tidyverse:: commands such as
+#ggplot(). Make the graph as close to publication-ready as you can.
+
 
 #plot(census_2015["estimate"])
 #census_2015[census_2015$variable=='DP02_0065P',]
