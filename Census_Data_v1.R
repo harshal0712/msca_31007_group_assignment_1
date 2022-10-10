@@ -10,10 +10,18 @@
 
 ##########################################STEP 1 & 2#####################################################################
 
-install.packages(c("tidycensus", "tidyverse"))
+install.packages(c("tidycensus", "tidyverse", "gridExtra"))
 library(tidycensus)
 library(tidyverse)
-library(ggplot2)
+library(sf)           # Objects and functions for geospatial data
+library(rgdal)        # Functions for spatial data input/output
+library(ggplot2)      # Graphing functions
+library(dplyr)        # Functions for processing tabular data
+library(tidyr)        # Functions for processing tabular data
+library(scales)       # Additional graphics functions
+library(RColorBrewer) # Color ramps for graphs and maps
+library(gridExtra)    # Functions for arranging multiple plots on a page
+library(readr)        # Functions for reading data
 
 #install the key for use in future R sessions
 census_api_key("0c4a2a2815a8d526966f2490024ef157e19478db", overwrite = TRUE, install = TRUE)
@@ -31,7 +39,7 @@ acs_var <- c('DP05_0001E','DP05_0018E','DP03_0062E','DP02_0065PE','DP03_0096PE',
 #)
 
 census_tidy_2015 <- get_acs(
-  geography = "tract", variables = acs_var, county = "Cook", state = "IL", year = 2015, geometry = TRUE, output = "wide"
+  geography = "tract", variables = acs_var, county = "Cook", state = "IL", year = 2015, geometry = TRUE
 )
 
 census_tidy_2016 <- get_acs(
@@ -55,18 +63,25 @@ census_tidy_2019 <- get_acs(
 
 #*********** c) Drop the columns which report margin of error *************************************
 drop_columns <- c("moe")
-census_tidy_cleaned_2015 <- census_tidy_2015[,!(names(census_tidy_2015) %in% drop_columns)]
-census_tidy_cleaned_2016 <- census_tidy_2016[,!(names(census_tidy_2016) %in% drop_columns)]
-census_tidy_cleaned_2017 <- census_tidy_2017[,!(names(census_tidy_2017) %in% drop_columns)]
-census_tidy_cleaned_2018 <- census_tidy_2018[,!(names(census_tidy_2018) %in% drop_columns)]
-census_tidy_cleaned_2019 <- census_tidy_2019[,!(names(census_tidy_2019) %in% drop_columns)]
+census_tidy_dropcols_2015 <- census_tidy_2015[,!(names(census_tidy_2015) %in% drop_columns)]
+census_tidy_dropcols_2016 <- census_tidy_2016[,!(names(census_tidy_2016) %in% drop_columns)]
+census_tidy_dropcols_2017 <- census_tidy_2017[,!(names(census_tidy_2017) %in% drop_columns)]
+census_tidy_dropcols_2018 <- census_tidy_2018[,!(names(census_tidy_2018) %in% drop_columns)]
+census_tidy_dropcols_2019 <- census_tidy_2019[,!(names(census_tidy_2019) %in% drop_columns)]
+
+#remove the rows from datafrane that contains at least one NA
+census_tidy_final_2015 <- na.omit(census_tidy_dropcols_2015)
+census_tidy_final_2016 <- na.omit(census_tidy_dropcols_2016)
+census_tidy_final_2017 <- na.omit(census_tidy_dropcols_2017)
+census_tidy_final_2018 <- na.omit(census_tidy_dropcols_2018)
+census_tidy_final_2019 <- na.omit(census_tidy_dropcols_2019)
 
 #format your output as a ‘wide’ table, not a ‘tidy’ table
-census_wide_2015 <- census_tidy_cleaned_2015 %>% pivot_wider(names_from = 'variable', values_from = c('estimate'))
-census_wide_2016 <- census_tidy_cleaned_2016 %>% pivot_wider(names_from = 'variable', values_from = c('estimate'))
-census_wide_2017 <- census_tidy_cleaned_2017 %>% pivot_wider(names_from = 'variable', values_from = c('estimate'))
-census_wide_2018 <- census_tidy_cleaned_2018 %>% pivot_wider(names_from = 'variable', values_from = c('estimate'))
-census_wide_2019 <- census_tidy_cleaned_2019 %>% pivot_wider(names_from = 'variable', values_from = c('estimate'))
+census_wide_2015 <- census_tidy_final_2015 %>% pivot_wider(names_from = 'variable', values_from = c('estimate'))
+census_wide_2016 <- census_tidy_final_2016 %>% pivot_wider(names_from = 'variable', values_from = c('estimate'))
+census_wide_2017 <- census_tidy_final_2017 %>% pivot_wider(names_from = 'variable', values_from = c('estimate'))
+census_wide_2018 <- census_tidy_final_2018 %>% pivot_wider(names_from = 'variable', values_from = c('estimate'))
+census_wide_2019 <- census_tidy_final_2019 %>% pivot_wider(names_from = 'variable', values_from = c('estimate'))
 
 #str(dc_income_wide_2015)
 
@@ -79,25 +94,33 @@ census_wide_2019 <- census_tidy_cleaned_2019 %>% pivot_wider(names_from = 'varia
 #*DP05_0001  -> totpop   (Total population)
 #*DP05_0018  -> medage   (Median age)
 
-census_wide_renamed_2015 <- census_wide_2015 %>%  
+census_wide_final_2015 <- census_wide_2015 %>%  
   rename('propbac' = 'DP02_0065P', 'medhhinc' = 'DP03_0062', 'propcov' = 'DP03_0096P', 'proppov' = 'DP03_0128P', 
          'proprent' = 'DP04_0047P', 'totpop' = 'DP05_0001', 'medage' = 'DP05_0018')
 
-census_wide_renamed_2016 <- census_wide_2016 %>%  
+census_wide_final_2016 <- census_wide_2016 %>%  
   rename('propbac' = 'DP02_0065P', 'medhhinc' = 'DP03_0062', 'propcov' = 'DP03_0096P', 'proppov' = 'DP03_0128P', 
          'proprent' = 'DP04_0047P', 'totpop' = 'DP05_0001', 'medage' = 'DP05_0018')
 
-census_wide_renamed_2017 <- census_wide_2017 %>%  
+census_wide_final_2017 <- census_wide_2017 %>%  
   rename('propbac' = 'DP02_0065P', 'medhhinc' = 'DP03_0062', 'propcov' = 'DP03_0096P', 'proppov' = 'DP03_0128P', 
          'proprent' = 'DP04_0047P', 'totpop' = 'DP05_0001', 'medage' = 'DP05_0018')
 
-census_wide_renamed_2018 <- census_wide_2018 %>%  
+census_wide_final_2018 <- census_wide_2018 %>%  
   rename('propbac' = 'DP02_0065P', 'medhhinc' = 'DP03_0062', 'propcov' = 'DP03_0096P', 'proppov' = 'DP03_0128P', 
          'proprent' = 'DP04_0047P', 'totpop' = 'DP05_0001', 'medage' = 'DP05_0018')
 
-census_wide_renamed_2019 <- census_wide_2019 %>%  
+census_wide_final_2019 <- census_wide_2019 %>%  
   rename('propbac' = 'DP02_0065P', 'medhhinc' = 'DP03_0062', 'propcov' = 'DP03_0096P', 'proppov' = 'DP03_0128P', 
          'proprent' = 'DP04_0047P', 'totpop' = 'DP05_0001', 'medage' = 'DP05_0018')
+
+
+#remove the rows from datafrane that contains at least one NA
+census_wide_final_2015 <- na.omit(census_wide_final_2015)
+census_wide_final_2016 <- na.omit(census_wide_final_2016)
+census_wide_final_2017 <- na.omit(census_wide_final_2017)
+census_wide_final_2018 <- na.omit(census_wide_final_2018)
+census_wide_final_2019 <- na.omit(census_wide_final_2019)
 
 
 ##########################################STEP 4#####################################################################
@@ -105,35 +128,77 @@ census_wide_renamed_2019 <- census_wide_2019 %>%
 #use either base:: R commands such as plot() or tidyverse:: commands such as
 #ggplot(). Make the graph as close to publication-ready as you can.
 
-plot(census_wide_renamed_2015["propbac"], main = "Percentage of population over the age of 25 year\nwith Bachelor's degree", sub ="Cook County, Illinois")
-plot(census_wide_renamed_2016["propbac"])
-plot(census_wide_renamed_2017["propbac"])
-plot(census_wide_renamed_2018["propbac"])
-plot(census_wide_renamed_2019["propbac"])
+
+#*********** Using plot command *************************************
+plot(census_wide_final_2015["propbac"], 
+     main = "2015 population over the age of 25 year\nwith Bachelor's degree", sub ="Cook County, Illinois")
+legend("topright", legend = c("red", "green"),
+       lwd = 3, col = c("red", "green"))
+
+plot(census_wide_final_2016["propbac"])
+plot(census_wide_final_2017["propbac"])
+plot(census_wide_final_2018["propbac"])
+plot(census_wide_final_2019["propbac"])
 #census_2015[census_2015$variable=='DP02_0065P',]
 
-ggplot(data = census_wide_renamed_2015) + 
-  geom_sf(data = census_wide_renamed_2015, aes(fill = "propbac", color = "propbac"), fill = NA) +
+
+#*********** Using ggplot command *************************************
+ggplot(data = census_wide_final_2015) + 
+  geom_sf(aes(fill = "propbac"), fill = NA) +
+  scale_fill_distiller(name="propbac", 
+                       palette = "Blues", 
+                       breaks = pretty_breaks()) +
+  geom_sf(aes(size = "totpop"), color = "blue", show.legend = "point") +
+  scale_size_discrete(name="totpop") +
+  theme_bw() + 
   labs(title = "Percentage of population over the age of 25 year",
        subtitle = "Cook County, Illinois",
        caption = "Data source: 2015 1-year ACS, US Census Bureau",
        fill = "% with Bachelor's degree") + 
-  theme_void() +
   theme(legend.position = "bottom")
 
-
-ggplot(data = census_wide_renamed_2015, aes(fill = "propbac", color = "propbac")) + 
-  geom_sf() +
-  scale_fill_viridis_c() +
-  scale_color_viridis_c()
+ggplot(data = census_wide_final_2015) +
+  geom_sf(aes(fill = "propbac"), size = 0.25, fill = NA) + 
+  scale_fill_distiller(name="propbac", 
+                       palette = "YlGn", 
+                       breaks = pretty_breaks()) +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        panel.background = element_rect(fill = "white", color = NA)) + 
+  labs(title="2015 population over the age of 25 year",
+       subtitle = "Cook County, Illinois",
+       caption = "Data source: 2015 1-year ACS, US Census Bureau",
+       fill = "propbac")
 
 ##########################################STEP 5#####################################################################
 #Create a linear model object in which median household income explains baccalaureate
 #attainment rates at the tract level, using the lm() command. Summarize the model object
 #using the summary() command
 
-linear_model_2015 <- lm(propbac ~ medhhinc, data = census_wide_renamed_2015)
+linear_model_2015 <- lm(propbac ~ medhhinc, data = census_wide_final_2015)
 summary(linear_model_2015)
 
 
-plot(census_wide_renamed_2015["medhhinc"], census_wide_renamed_2015["propbac"])
+#Create an x-y plot showing how median household income can help to explain baccalaureate attainment at the tract-level. 
+#Add the trend line suggested by your model. Feel free to use either base:: R commands such as plot() or tidyverse::
+#commands such as ggplot(). Make the graph as close to publication-ready as you can.
+
+#*********** Using plot command *************************************
+plot(census_wide_final_2015$medhhinc, census_wide_final_2015$propbac, 
+     pch = 16, cex = 0.8, col='steelblue',
+     main = "MEDIAN HOUSEHOLD INCOME AGAINST\nBACCALAUREATE ATTAINMENT RATE", 
+     xlab = "Median Household Income ($)", 
+     ylab = "Baccalaureate Attainment Rate (%)")
+
+abline(lm(propbac ~ medhhinc, data = census_wide_final_2015))
+
+#*********** Using ggplot command *************************************
+ggplot(census_wide_final_2015, aes(x=medhhinc, y=propbac)) +
+  geom_point(color='steelblue',) +
+  geom_smooth(method='lm', formula= y~x, se=FALSE, color='turquoise4')  +
+  theme_minimal() +
+  labs(x='Median Household Income ($)', 
+       y='Baccalaureate Attainment Rate (%)', 
+       title='MEDIAN HOUSEHOLD INCOME AGAINST\nBACCALAUREATE ATTAINMENT RATE') +
+  theme(plot.title = element_text(hjust=0.5, size=20, face='bold')) 
