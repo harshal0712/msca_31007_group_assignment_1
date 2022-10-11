@@ -91,14 +91,17 @@ ggplot(data = census_wide_final_2015_2019, aes(fill = propbac)) +
   scale_fill_distiller(palette = "YlGn", 
                        direction = 1, 
                        breaks = pretty_breaks()) +
-  theme(axis.text.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks = element_blank(),
-        panel.background = element_rect(fill = "blue", color = NA)) +
   labs(title="Tract-level baccalaureate attainment rates",
        subtitle = "Cook County, Illinois",
        caption = "Data: 2015-2019 5-year ACS, US Census Bureau",
        fill = "Percentage") +
+  theme_bw() + 
+  theme(panel.border = element_blank(), panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),
+        axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        panel.background = element_rect(fill = "white", color = NA))
   theme_minimal()
 
 ##########################################STEP 5#####################################################################
