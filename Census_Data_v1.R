@@ -156,7 +156,7 @@ hist(census_wide_data_2015_2019.lm$residuals, main = "Residual Histogram of Bacc
 
 #b) Serial correlation
 
-#H0 -> There is no first order serial correlation in residuals
+#H0 -> There is no first order serial correlation among the residuals
 #H1 -> There is first order serial correlation in residuals
 
 dwtest(formula = census_wide_data_2015_2019.lm,  alternative = "two.sided")
@@ -179,4 +179,4 @@ lmtest::bptest(census_wide_data_2015_2019.lm)
 #BASICALLY normality, serial correlation, heteroskedasticityassumptions are violated, hence the linear regression model is not the best fit for this data points
 
 ##########################################STEP 7#####################################################################
-
+  
