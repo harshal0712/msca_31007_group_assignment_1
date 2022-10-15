@@ -179,4 +179,16 @@ lmtest::bptest(census_wide_data_2015_2019.lm)
 #BASICALLY normality, serial correlation, heteroskedasticityassumptions are violated, hence the linear regression model is not the best fit for this data points
 
 ##########################################STEP 7#####################################################################
-  
+#Generate 10,000 samples of simulated tract-level household incomes, each the same size as
+#your Cook County dataset. 
+samples <- sample(x=census_wide_final_2015_2019$medhhinc, size=10000, replace=TRUE)
+samples
+
+
+#Perform a ‘non-parametric bootstrap’ in which the values are
+#sampled randomly with replacement from your data
+BT <- np.boot(x = samples, statistic = median)
+BT
+
+#a) Determine what proportion of the 10,000 samples show a stronger link between the
+#(simulated) tract-level incomes and th
