@@ -11,6 +11,7 @@
 ##########################################STEP 1 & 2#####################################################################
 
 install.packages(c("tidycensus", "tidyverse", "gridExtra"))
+install.packages("lmtest")
 library(tidycensus)
 library(tidyverse)
 library(sf)           # Objects and functions for geospatial data
@@ -22,6 +23,7 @@ library(scales)       # Additional graphics functions
 library(RColorBrewer) # Color ramps for graphs and maps
 library(gridExtra)    # Functions for arranging multiple plots on a page
 library(readr)        # Functions for reading data
+library(lmtest)
 
 #install the key for use in future R sessions
 census_api_key("0c4a2a2815a8d526966f2490024ef157e19478db", overwrite = TRUE, install = TRUE)
@@ -45,7 +47,7 @@ census_tidy_2015_2019 <- get_acs(
 drop_columns <- c("moe")
 census_tidy_dropcols_2015_2019 <- census_tidy_2015_2019[,!(names(census_tidy_2015_2019) %in% drop_columns)]
 
-#remove the rows from datafrane that contains at least one NA
+#remove the rows from datafranme that contains at least one NA
 census_tidy_final_2015_2019 <- na.omit(census_tidy_dropcols_2015_2019)
 
 #format your output as a ‘wide’ table, not a ‘tidy’ table
@@ -135,3 +137,46 @@ ggplot(census_wide_final_2015_2019, aes(x=medhhinc, y=propbac)) +
        y='Baccalaureate Attainment Rate (%)', 
        title='MEDIAN HOUSEHOLD INCOME AGAINST\nBACCALAUREATE ATTAINMENT RATE') +
   theme(plot.title = element_text(hjust=0.5, size=20, face='bold')) 
+
+
+##########################################STEP 6#####################################################################
+#6) Restore the dataset, code, and linear model that you made last week. Test the residuals of the linear model for:
+
+#a) Normality
+
+#Check the normality assumption is by creating a Q-Q plot
+plot(census_wide_data_2015_2019.lm)
+
+#Create a Histogram of the Residuals I\
+hist(census_wide_data_2015_2019.lm$residuals, main = "Residual Histogram of Baccalaureate Attainment Rate Model")
+
+#Normality assumption is violated because residual are not normally distributed because it's more skewed towards right
+#More observations of lower baccalaureate attainment rate towards the residual zero for particular median household incomes
+
+
+#b) Serial correlation
+
+#H0 -> There is no first order serial correlation in residuals
+#H1 -> There is first order serial correlation in residuals
+
+dwtest(formula = census_wide_data_2015_2019.lm,  alternative = "two.sided")
+
+#Since p-value = 0.00559 is less the significance threshold (alpha) of 0.05, we reject NULL hypothesis and accept the alternative hypothesis 
+
+
+#c) Heteroskedasticity
+#Heteroscedasticity is the situation in which the variance of the residuals of a regression model 
+#is not the same across all values of the predicted variable
+
+#H0 -> Residuals are distributed with equal variance (i.e homoscedasticity)
+#H1 -> Residuals are distributed with unequal variance (i.e heteroskedasticity)
+
+lmtest::bptest(census_wide_data_2015_2019.lm)
+
+#Since p-value < 2.2e-16 is less the significance threshold (alpha) of 0.05, we reject NULL hypothesis and accept the alternative hypothesis 
+
+
+#BASICALLY normality, serial correlation, heteroskedasticityassumptions are violated, hence the linear regression model is not the best fit for this data points
+
+##########################################STEP 7#####################################################################
+
