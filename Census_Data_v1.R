@@ -181,58 +181,48 @@ lmtest::bptest(census_wide_data_2015_2019.lm)
 #BASICALLY normality, serial correlation, heteroskedasticity assumptions are violated, hence the linear regression model is not the best fit for this data points
 
 ##########################################STEP 7#####################################################################
-#Generate 10,000 samples of simulated tract-level household incomes, each the same size as
-#your Cook County dataset.
+#Generate 10,000 samples of simulated tract-level household incomes, each the same size as your Cook County dataset. 
+#Perform a ‘non-parametric bootstrap’ in which the values are sampled randomly with replacement from your data
+
+#create a empty vector
+npbs_sample_correlations <- c()
+#npbs_sample_coefficients <- c()
+
+#set seed to get consistent results
 set.seed(20220110)
-
+sample_size <- 10000
 batch_size <- nrow(census_wide_final_2015_2019)
-partitioned_sample_iteration <- ceiling((10000/batch_size))
-for(j in 1:partitioned_sample_iteration){
-  simulated_column <- sprintf("medhhinc_simulated_%d", j)
-  census_wide_final_2015_2019[simulated_column] <- sample(x=census_wide_final_2015_2019$medhhinc, size=batch_size, replace=TRUE)
+for(j in 1:sample_size){
+  census_wide_final_2015_2019["medhhinc_simulated"] <- sample(x=census_wide_final_2015_2019$medhhinc, size=batch_size, replace=TRUE)
+  
+  #census_wide_simulated_data_2015_2019.lm <- lm(propbac ~ medhhinc_simulated, data = census_wide_final_2015_2019)
+  #summary.lm <- summary(census_wide_simulated_data_2015_2019.lm)
+  #npbs_sample_coefficients[j] = summary.lm$coefficients["medhhinc_simulated", "Estimate"]
+  
+  #append correlation of each sample into vector
+  npbs_sample_correlations[j] = cor(x=census_wide_final_2015_2019$propbac, y=census_wide_final_2015_2019$medhhinc_simulated)
 }
-
-plot(census_wide_final_2015_2019$medhhinc_simulated_1)
-plot(census_wide_final_2015_2019$medhhinc_simulated_2)
-plot(census_wide_final_2015_2019$medhhinc_simulated_3)
-plot(census_wide_final_2015_2019$medhhinc_simulated_4)
-plot(census_wide_final_2015_2019$medhhinc_simulated_5)
-plot(census_wide_final_2015_2019$medhhinc_simulated_6)
-plot(census_wide_final_2015_2019$medhhinc_simulated_7)
-plot(census_wide_final_2015_2019$medhhinc_simulated_8)
-plot(census_wide_final_2015_2019$medhhinc)
-
-
-#Perform a ‘non-parametric bootstrap’ in which the values are
-#sampled randomly with replacement from your data
-npbs_simulated_1 <- np.boot(x = census_wide_final_2015_2019$medhhinc_simulated_1, statistic = median)
-npbs_simulated_1
-
-npbs_simulated_2 <- np.boot(x = census_wide_final_2015_2019$medhhinc_simulated_2, statistic = median)
-npbs_simulated_2
+drop_columns <- c("medhhinc_simulated")
+census_wide_final_2015_2019 <- census_wide_final_2015_2019[,!(names(census_wide_final_2015_2019) %in% drop_columns)]
 
 #a) Determine what proportion of the 10,000 samples show a stronger link between the (simulated) tract-level incomes and 
 #the (actual) tract-level baccalaureate attainment rates.
-plot(npbs$boot.dist)
-hist(npbs$boot.dist, xlab = "Simulated Median Household Income", main = "Bootstrap Distribution")
-box()
-abline(v = npbs$t0, lty = 2, col = "red")
-legend("topleft", "t0", lty = 2, col = "red", bty = "n")
+
+#get the actual correlation from original data frame
+true_correlation_from_census_wide_final_2015_2019 <- cor(x=census_wide_final_2015_2019$propbac, y=census_wide_final_2015_2019$medhhinc)
+
+
+sum(true_correlation_from_census_wide_final_2015_2019 < npbs_sample_correlations)/sample_size
+#sum(true_correlation_from_census_wide_final_2015_2019 < npbs_sample_coefficients)/sample_size
 
 
 ##########################################STEP 8#####################################################################
 #Plot the distribution of correlations between your samples and tract-level baccalaureate attainment. 
 #Make the graph as close to publication-ready as you can.
 
-census_wide_simulated_data_2015_2019.lm <- lm(propbac ~ medhhinc_simulated_1, data = census_wide_final_2015_2019)
-summary(census_wide_simulated_data_2015_2019.lm)
+hist(npbs_sample_correlations, main = "Simulated Histogram of Median Household income")
 
-#*********** Using ggplot command *************************************
-ggplot(census_wide_final_2015_2019, aes(x=medhhinc_simulated_1, y=propbac)) +
-  geom_point(color='steelblue',) +
-  geom_smooth(method='lm', formula= y~x, se=FALSE, color='turquoise4')  +
-  theme_minimal() +
-  labs(x='Simulated Median Household Income ($)', 
-       y='Baccalaureate Attainment Rate (%)', 
-       title='Tract-level Baccalaureate Attainment Rate') +
-  theme(plot.title = element_text(hjust=0.5, size=20, face='bold')) 
+#a) Identify the distribution of these correlations to the best of your ability. Be prepared to discuss the implications of 
+#these simulated correlations with respect to the possible presence of a link between income and educational achievement.
+
+#The simulated data point is NORAMLLY DISTRIBUTED
