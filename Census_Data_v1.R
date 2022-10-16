@@ -137,7 +137,7 @@ ggplot(census_wide_final_2015_2019, aes(x=medhhinc, y=propbac)) +
   theme_minimal() +
   labs(x='Median Household Income ($)', 
        y='Baccalaureate Attainment Rate (%)', 
-       title='MEDIAN HOUSEHOLD INCOME AGAINST\nBACCALAUREATE ATTAINMENT RATE') +
+       title='Tract-level Baccalaureate Attainment Rate') +
   theme(plot.title = element_text(hjust=0.5, size=20, face='bold')) 
 
 
@@ -224,15 +224,15 @@ legend("topleft", "t0", lty = 2, col = "red", bty = "n")
 #Plot the distribution of correlations between your samples and tract-level baccalaureate attainment. 
 #Make the graph as close to publication-ready as you can.
 
-census_wide_simulated_data_2015_2019.lm <- lm(propbac ~ medhhinc_simulated, data = census_wide_final_2015_2019)
+census_wide_simulated_data_2015_2019.lm <- lm(propbac ~ medhhinc_simulated_1, data = census_wide_final_2015_2019)
 summary(census_wide_simulated_data_2015_2019.lm)
 
 #*********** Using ggplot command *************************************
-ggplot(census_wide_final_2015_2019, aes(x=medhhinc_simulated, y=propbac)) +
+ggplot(census_wide_final_2015_2019, aes(x=medhhinc_simulated_1, y=propbac)) +
   geom_point(color='steelblue',) +
   geom_smooth(method='lm', formula= y~x, se=FALSE, color='turquoise4')  +
   theme_minimal() +
   labs(x='Simulated Median Household Income ($)', 
        y='Baccalaureate Attainment Rate (%)', 
-       title='SIMULATED MEDIAN HOUSEHOLD INCOME AGAINST\nBACCALAUREATE ATTAINMENT RATE') +
+       title='Tract-level Baccalaureate Attainment Rate') +
   theme(plot.title = element_text(hjust=0.5, size=20, face='bold')) 
