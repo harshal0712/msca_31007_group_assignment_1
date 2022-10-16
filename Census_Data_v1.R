@@ -212,8 +212,10 @@ census_wide_final_2015_2019 <- census_wide_final_2015_2019[,!(names(census_wide_
 true_correlation_from_census_wide_final_2015_2019 <- cor(x=census_wide_final_2015_2019$propbac, y=census_wide_final_2015_2019$medhhinc)
 
 
-sum(true_correlation_from_census_wide_final_2015_2019 < npbs_sample_correlations)/sample_size
-#sum(true_correlation_from_census_wide_final_2015_2019 < npbs_sample_coefficients)/sample_size
+proportion <- sum(true_correlation_from_census_wide_final_2015_2019 < npbs_sample_correlations)/sample_size
+#proportion <- sum(true_correlation_from_census_wide_final_2015_2019 < npbs_sample_coefficients)/sample_size
+
+#Value of 0 means there is no stronger link between the (simulated) tract-level incomes and the (actual) tract-level baccalaureate attainment rates
 
 
 ##########################################STEP 8#####################################################################
