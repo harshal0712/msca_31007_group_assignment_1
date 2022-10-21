@@ -1,3 +1,4 @@
+
 ###############################################################################################################################
 
 #Reference links
@@ -186,6 +187,7 @@ lmtest::bptest(census_wide_data_2015_2019.lm)
 
 #create a empty vector
 npbs_sample_correlations <- c()
+npbs_sample_correlations_test <- c()
 #npbs_sample_coefficients <- c()
 
 #set seed to get consistent results
@@ -201,6 +203,19 @@ for(j in 1:sample_size){
   
   #append correlation of each sample into vector
   npbs_sample_correlations[j] = cor(x=census_wide_final_2015_2019$propbac, y=census_wide_final_2015_2019$medhhinc_simulated)
+  
+  
+  sum_x <- sum(census_wide_final_2015_2019$propbac)
+  sum_y <- sum(census_wide_final_2015_2019$medhhinc_simulated)
+  sum_x_sqr <- sum(census_wide_final_2015_2019$propbac^2)
+  sum_y_sqr <- sum(census_wide_final_2015_2019$medhhinc_simulated^2)
+  sum_xy <- sum(census_wide_final_2015_2019$propbac*census_wide_final_2015_2019$medhhinc_simulated)
+  mean_x <- mean(census_wide_final_2015_2019$propbac)
+  mean_y <- mean(census_wide_final_2015_2019$medhhinc_simulated)
+  
+  n <- length(census_wide_final_2015_2019$propbac)
+  r <- (sum_xy - ((sum_x*sum_y)/n))/sqrt((sum_x_sqr- (sum_x^2/n)) * (sum_y_sqr- (sum_y^2/n)))
+  npbs_sample_correlations_test[j] <- r^2
 }
 drop_columns <- c("medhhinc_simulated")
 census_wide_final_2015_2019 <- census_wide_final_2015_2019[,!(names(census_wide_final_2015_2019) %in% drop_columns)]
@@ -216,6 +231,9 @@ proportion <- sum(true_correlation_from_census_wide_final_2015_2019 < npbs_sampl
 #proportion <- sum(true_correlation_from_census_wide_final_2015_2019 < npbs_sample_coefficients)/sample_size
 
 #Value of 0 means there is no stronger link between the (simulated) tract-level incomes and the (actual) tract-level baccalaureate attainment rates
+#What we are thinking is since true correlation is coming from true data source, generating sample correlation from sample data is not having 
+#stronger link between the (simulated) tract-level incomes and the (actual) tract-level baccalaureate attainment rates
+#Tract-level baccalaureate attainment rates is strongly linked to actual income and not simulated income
 
 
 ##########################################STEP 8#####################################################################
@@ -223,6 +241,7 @@ proportion <- sum(true_correlation_from_census_wide_final_2015_2019 < npbs_sampl
 #Make the graph as close to publication-ready as you can.
 
 hist(npbs_sample_correlations, main = "Simulated Histogram of Median Household income")
+
 
 #a) Identify the distribution of these correlations to the best of your ability. Be prepared to discuss the implications of 
 #these simulated correlations with respect to the possible presence of a link between income and educational achievement.
