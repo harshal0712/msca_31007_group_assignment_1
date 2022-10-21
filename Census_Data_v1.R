@@ -13,6 +13,7 @@
 install.packages(c("tidycensus", "tidyverse", "gridExtra"))
 install.packages("lmtest")
 install.packages("nptest")
+install.packages("MASS")
 library(tidycensus)
 library(tidyverse)
 library(sf)           # Objects and functions for geospatial data
@@ -26,6 +27,7 @@ library(gridExtra)    # Functions for arranging multiple plots on a page
 library(readr)        # Functions for reading data
 library(lmtest)
 library(nptest)
+library(MASS)
 
 #install the key for use in future R sessions
 census_api_key("0c4a2a2815a8d526966f2490024ef157e19478db", overwrite = TRUE, install = TRUE)
@@ -229,3 +231,4 @@ hist(npbs_sample_correlations, main = "Simulated Histogram of Median Household i
 #these simulated correlations with respect to the possible presence of a link between income and educational achievement.
 
 #The simulated data point is NORAMLLY DISTRIBUTED
+fitdistr(npbs_sample_correlations, "normal")
