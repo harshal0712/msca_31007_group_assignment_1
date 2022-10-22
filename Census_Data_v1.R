@@ -158,6 +158,7 @@ ols_test_normality(census_wide_data_2015_2019.lm)
 # Because the p-value is below 0.05, we reject the null hypothesis and conclude that the residuals do not follow a normal distribution.
 
 # b) Serial correlation
+# Let's check for serial correlation by plotting acf:
 acf(census_wide_data_2015_2019.lm$residuals, type = "correlation")
 # Using hypothesis testing to evalaute serial correlation assumptions:
 # H0 -> There is no first order serial correlation among the residuals
@@ -219,7 +220,7 @@ sum(actual_correlation_from_data < npbs_sample_correlations)/sample_size
 # Make the graph as close to publication-ready as you can.
 # ---
 
-hist(npbs_sample_correlations, main = "Simulated Histogram of Median Household income")
+hist(npbs_sample_correlations, main = "Distribution of correlation between samples")
 npbs_sample_correlations.vector <- as.vector(npbs_sample_correlations)
 plot(ecdf(npbs_sample_correlations.vector))
 
@@ -230,94 +231,50 @@ ks.test(npbs_sample_correlations,pnorm,mean=-8.219608e-05,sd=2.736541e-02)
 # The simulated data point is normally distributed.
 
 
-##########################################STEP 10#####################################################################
-#Plot how the SSE (sum of squared errors) of the linear model would change for different values of the slope on median household income, 
-#keeping the same intercept as in the original model. In other words, the numerical value of the slope will be plotted on the x-axis. Make
-#the graph as close to publication-ready as you can
+# ---
+# Perform Step 9
+# Restore the dataset, code, and linear model that you made last week.
+# ---
+str(census_wide_final_2015_2019)
+summary(census_wide_data_2015_2019.lm)
 
-sample_size <- nrow(census_wide_final_2015_2019)
 
-true_predictor <- census_wide_final_2015_2019$medhhinc
-true_response <- census_wide_final_2015_2019$propbac
+# ---
+# Perform Step 10
+# Plot how the SSE (sum of squared errors) of the linear model would change for different values of the slope on median household income, 
+# keeping the same intercept as in the original model. In other words, the numerical value of the slope will be plotted on the x-axis. Make
+# the graph as close to publication-ready as you can
+# ---
 
-#------------------------------------BEGIN Mathematically generating the regression line for actual data---------------------------#
-sum_x <- sum(true_predictor)
-sum_y <- sum(true_response)
-sum_x_sqr <- sum(true_predictor^2)
-sum_y_sqr <- sum(true_response^2)
-sum_xy <- sum(true_predictor*true_response)
+# Let's get a SSE for actual data using SUM((y-y_pred)^2) formula
+y <- census_wide_final_2015_2019$propbac
+x <- census_wide_final_2015_2019$medhhinc
+census_wide_data_2015_2019.lm.summary <- summary(census_wide_data_2015_2019.lm)
+intercept <- census_wide_data_2015_2019.lm.summary$coefficients[1,1]
+slope <- census_wide_data_2015_2019.lm.summary$coefficient[2,1]
+y_pred <- intercept + slope * x
+sse <- sum((y-y_pred)^2)
+sse
+slope
 
-SS_xy <- sum_xy - (sum_x*sum_y/sample_size)
-SS_xx <- sum_x_sqr - (sum_x^2/sample_size)
-
-#slope of actual data (medhhinc versus propbac)
-slope_b_actual_data <- SS_xy/SS_xx
-#intercept of actual data (medhhinc versus propbac)
-intercept_a_actual_data <- (sum_y - slope_b_actual_data*sum_x)/sample_size
-
-#regression line of actual data (medhhinc versus propbac)
-yhat_actual_regression_line <-  intercept_a_actual_data + slope_b_actual_data*true_predictor
-
-SSE_actual_data <- sum((true_response-yhat_actual_regression_line)^2)
-SSE_actual_data
-
-SSR_actual_data <- sum((yhat_actual_regression_line - mean(true_response))^2)
-SSR_actual_data
-
-SST_actual_data <- SSR_actual_data + SSE_actual_data
-SST_actual_data
-
-r_squared_actual_data <- SSR_actual_data/SST_actual_data
-r_squared_actual_data
-
-#Plotted regression line from actual median household income versus baccalaureate attainment rate
-plot(x=census_wide_final_2015_2019$medhhinc, y=census_wide_final_2015_2019$propbac, 
-     pch = 16, cex = 0.8, col='steelblue',
-     main = "Actual regression line", 
-     xlab = "Actual median household income", 
-     ylab = "Baccalaureate attainment rate")
-
-abline(lm(propbac ~ medhhinc, data = census_wide_final_2015_2019))
-
-#------------------------------------END Mathematically generating the regression line for actual data---------------------------#
-
-#------------------------------------BEGIN Mathematically generating the regression line for simulated data---------------------------#
-#set seed to get consistent results
-SSE_simulated_list <- c()
-slope_b_simulated_list <- c()
-set.seed(20220110)
-sample_size <- 10000
-batch_size <- nrow(census_wide_final_2015_2019)
-for(j in 1:sample_size){
-  simulated_predictor <- sample(x=census_wide_final_2015_2019$medhhinc, size=batch_size, replace=TRUE)
-  true_response <- census_wide_final_2015_2019$propbac
-  
-  sum_x <- sum(simulated_predictor)
-  sum_y <- sum(true_response)
-  sum_x_sqr <- sum(simulated_predictor^2)
-  sum_y_sqr <- sum(true_response^2)
-  sum_xy <- sum(simulated_predictor*true_response)
-  
-  SS_xy <- sum_xy - (sum_x*sum_y/sample_size)
-  SS_xx <- sum_x_sqr - (sum_x^2/sample_size)
-  
-  #slope of simulated data (simulated medhhinc versus propbac)
-  slope_b_simulated_data <- SS_xy/SS_xx
-  slope_b_simulated_list[j] <- slope_b_simulated_data
-  
-  #regression line of actual data (simulated medhhinc versus propbac)
-  yhat_simulated_regression_line <-  intercept_a_actual_data + slope_b_simulated_data*simulated_predictor
-  
-  #add the simulated sum of squared errors of the linear model from simulated data
-  SSE_simulated_list[j] <- sum((true_response-yhat_simulated_regression_line)^2)
+# Now we want to keep the same intercept and change value of slope to see how SSE changes.
+slope_iterations <- seq(-0.001, 0.001, by=0.00005)
+sse_iterations <- c()
+y_pred_iterations <- c()
+for (i in 1:length(slope_iterations)) {
+  for(j in 1:nrow(census_wide_final_2015_2019)) {
+    y_pred_iterations[j] <- intercept + slope_iterations[i] * x[j]
+  }
+  sse_iterations[i] <- sum((y-y_pred_iterations)^2)
 }
-#------------------------------------END Mathematically generating the regression line for simulated data---------------------------#
-
-#Plotted regression line from simulated median household income versus baccalaureate attainment rate
-plot(x=slope_b_simulated_list, y=SSE_simulated_list, 
+sse_dataframe <- data.frame("Slope" = c(slope_iterations),
+                            "SSE" = c(sse_iterations))
+#Plotted regression line from actual median household income versus baccalaureate attainment rate
+options(scipen = 999)
+plot(x=sse_dataframe$Slope, y=sse_dataframe$SSE, 
      pch = 16, cex = 0.8, col='steelblue',
-     main = "SSE versus Slope on simulated median household income", 
-     xlab = "Slope on simulated median household income", 
-     ylab = "SSE")
-
-abline(lm(SSE_simulated_list ~ slope_b_simulated_list))
+     main = "Distribution of SSE for different values of the slope on MedHHIncome", 
+     xlab = "Slope of MedHHIncome", 
+     ylab = "SSE",
+     type="o")
+abline(lm(propbac ~ medhhinc, data = census_wide_final_2015_2019), col="red", lty=2)
