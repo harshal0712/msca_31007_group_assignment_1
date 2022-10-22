@@ -39,7 +39,7 @@ library(MASS)
 library(fitdistrplus)
 
 # Enter Census API Key
-census_api_key("55b53f404b474d711439ed9420212277bb70f1b1", overwrite = TRUE, install = TRUE)
+census_api_key("0c4a2a2815a8d526966f2490024ef157e19478db", overwrite = TRUE, install = TRUE)
 
 
 # ---
@@ -238,6 +238,15 @@ ks.test(npbs_sample_correlations,pnorm,mean=-8.219608e-05,sd=2.736541e-02)
 str(census_wide_final_2015_2019)
 summary(census_wide_data_2015_2019.lm)
 
+#------------------------------------BEGIN Mathematically generating the regression line from actual data---------------------------#
+y_propbac <- census_wide_final_2015_2019$propbac
+x_medhhinc <- census_wide_final_2015_2019$medhhinc
+census_wide_data_2015_2019.lm.summary <- summary(census_wide_data_2015_2019.lm)
+actual_intercept <- census_wide_data_2015_2019.lm.summary$coefficients[1,1]
+actual_slope <- census_wide_data_2015_2019.lm.summary$coefficient[2,1]
+yhat_actual_regression_line <- actual_intercept + actual_slope * x_medhhinc
+actual_sse <- sum((y_propbac-yhat_actual_regression_line)^2)
+
 
 # ---
 # Perform Step 10
@@ -246,30 +255,20 @@ summary(census_wide_data_2015_2019.lm)
 # the graph as close to publication-ready as you can
 # ---
 
-# Let's get a SSE for actual data using SUM((y-y_pred)^2) formula
-y <- census_wide_final_2015_2019$propbac
-x <- census_wide_final_2015_2019$medhhinc
-census_wide_data_2015_2019.lm.summary <- summary(census_wide_data_2015_2019.lm)
-intercept <- census_wide_data_2015_2019.lm.summary$coefficients[1,1]
-slope <- census_wide_data_2015_2019.lm.summary$coefficient[2,1]
-y_pred <- intercept + slope * x
-sse <- sum((y-y_pred)^2)
-sse
-slope
-
 # Now we want to keep the same intercept and change value of slope to see how SSE changes.
-slope_iterations <- seq(-0.001, 0.001, by=0.00005)
+slope_iterations <- seq(from=-0.001, to=0.001, by=0.00005)
 sse_iterations <- c()
 y_pred_iterations <- c()
 for (i in 1:length(slope_iterations)) {
   for(j in 1:nrow(census_wide_final_2015_2019)) {
-    y_pred_iterations[j] <- intercept + slope_iterations[i] * x[j]
+    y_pred_iterations[j] <- actual_intercept + slope_iterations[i] * x_medhhinc[j]
   }
-  sse_iterations[i] <- sum((y-y_pred_iterations)^2)
+  sse_iterations[i] <- sum((y_propbac-y_pred_iterations)^2)
 }
 sse_dataframe <- data.frame("Slope" = c(slope_iterations),
                             "SSE" = c(sse_iterations))
-#Plotted regression line from actual median household income versus baccalaureate attainment rate
+
+#Plotted from distribution of SSE for different values of the slope on MedHHIncome
 options(scipen = 999)
 plot(x=sse_dataframe$Slope, y=sse_dataframe$SSE, 
      pch = 16, cex = 0.8, col='steelblue',
@@ -287,25 +286,12 @@ abline(lm(propbac ~ medhhinc, data = census_wide_final_2015_2019), col="red", lt
 #Make the graph as close to publication-ready as you can.
 # ---
 
-y_propbac <- census_wide_final_2015_2019$propbac
-x_medhhinc <- census_wide_final_2015_2019$medhhinc
-census_wide_data_2015_2019.lm.summary <- summary(census_wide_data_2015_2019.lm)
-intercept <- census_wide_data_2015_2019.lm.summary$coefficients[1,1]
-slope <- census_wide_data_2015_2019.lm.summary$coefficient[2,1]
-y_pred <- intercept + slope * x
-sse <- sum((y-y_pred)^2)
-sse
-slope
-
-
-intercept_iterations <- seq(from=intercept-1.5, to=intercept+1.5, by=0.1)
+intercept_iterations <- seq(from=actual_intercept-1.5, to=actual_intercept+1.5, by=0.1)
 loglik_simulated_list <- c()
 slope_iterations <- c()
 for (i in 1:length(intercept_iterations)) {
   for(j in 1:nrow(census_wide_final_2015_2019)) {
-    y_pred_iterations[j] <- intercept_iterations[i] + slope * x_medhhinc[j]
-    
-    
+    y_pred_iterations[j] <- intercept_iterations[i] + actual_slope * x_medhhinc[j]
   }
   
   model_dataframe <- data.frame("Y" = c(y_pred_iterations),
@@ -330,3 +316,71 @@ plot(x=loglik_dataframe$Intercept, y=loglik_dataframe$Log_likelihood,
      ylab = "Log-likelihood",
      type="o")
 abline(lm(propbac ~ medhhinc, data = census_wide_final_2015_2019), col="red", lty=2)
+
+
+
+# ---
+# Perform Step 12
+#Consider a radical tax policy (call it the ‘Robin Hood’ tax) which would reduce the median household income in 
+#the 50 highest-earning tracts by $10,000, and increase the median household income in the 50 lowest-earning tracts 
+#by $10,000. What would the net effect on baccalaureate attainment be, according to the linear model? 
+#Do you consider this realistic? Does the data suggest any evidence for or against this theory?
+# ---
+
+
+#sort the dataframe by column 'medhhinc' in descending order
+census_wide_final_2015_2019_sorted <- census_wide_final_2015_2019 %>% arrange(desc(medhhinc))
+
+#Generate Row number or Row index to the dataframe using seq.int()
+census_wide_final_2015_2019_sorted$row_num <- seq.int(nrow(census_wide_final_2015_2019_sorted))
+
+total_sample_size <- nrow(census_wide_final_2015_2019_sorted)
+
+#add column simulated_medhhinc based on 50 highest-earning tracts and 50 lowest-earning tracts
+robin_hood_threadhold_income <- 10000
+robin_hood_threadhold_size <- 50
+census_wide_final_2015_2019_sorted <- census_wide_final_2015_2019_sorted %>%
+  mutate(simulated_medhhinc = case_when(
+    row_num >= 1 & row_num <= robin_hood_threadhold_size  ~ medhhinc-robin_hood_threadhold_income,
+    row_num > robin_hood_threadhold_size & row_num < (total_sample_size - robin_hood_threadhold_size)  ~ medhhinc,
+    row_num >= (total_sample_size - robin_hood_threadhold_size) ~ medhhinc+robin_hood_threadhold_income
+  ))
+
+#Plotted regression line from simulated median household income versus baccalaureate attainment rate
+ggplot(census_wide_final_2015_2019_sorted, aes(x=simulated_medhhinc, y=propbac)) +
+  geom_point(color='steelblue',) +
+  geom_smooth(method='lm', formula= y~x, se=FALSE, color='turquoise4')  +
+  labs(x='Simulated Median Household Income ($)', 
+       y='Baccalaureate Attainment Rate (%)', 
+       title='Tract-level Baccalaureate Attainment Rate') +
+  theme(plot.title = element_text(hjust=0.5, size=20, face='bold'), 
+        panel.border = element_blank(), panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),
+        panel.background = element_rect(fill = "white", color = NA))
+theme_minimal()
+
+#Plotted regression line from actual median household income versus baccalaureate attainment rate
+ggplot(census_wide_final_2015_2019, aes(x=medhhinc, y=propbac)) +
+  geom_point(color='steelblue',) +
+  geom_smooth(method='lm', formula= yhat_actual_regression_line~x, se=FALSE, color='turquoise4')  +
+  labs(x='Actual Median Household Income ($)', 
+       y='Baccalaureate Attainment Rate (%)', 
+       title='Tract-level Baccalaureate Attainment Rate') +
+  theme(plot.title = element_text(hjust=0.5, size=20, face='bold'), 
+        panel.border = element_blank(), panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),
+        panel.background = element_rect(fill = "white", color = NA))
+theme_minimal()
+
+
+#After applying ‘Robin Hood’ tax policy, even though the sum of squares (SSE_simulated_data = 99642.83) of the regression 
+#model from simulated median household income versus baccalaureate attainment rate is lesser than the sum of squares 
+#(SSE_actual_data = 101495.9) of the regression model from actual median household income versus baccalaureate attainment 
+#rate, overall lesser percentage of baccalaureate attainment rate are still crowded at lower median household income 
+#irrespective of simulated versus actual data which tells clearly ‘Robin Hood’ tax policy has no impact on increasing 
+#the baccalaureate attainment rate especially for smaller portion of lower household income brackets
+
+#To increase the percentage of baccalaureate attainment rate for lower median household income bracket, we need to 
+#increase drastically the income of lower income bracket households
+
+#Hence it's not realistic
