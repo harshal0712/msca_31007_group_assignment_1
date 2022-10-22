@@ -278,3 +278,55 @@ plot(x=sse_dataframe$Slope, y=sse_dataframe$SSE,
      ylab = "SSE",
      type="o")
 abline(lm(propbac ~ medhhinc, data = census_wide_final_2015_2019), col="red", lty=2)
+
+
+# ---
+# Perform Step 11
+#Plot how the log-likelihood of the model would change for different values of the intercept, keeping the same slope as 
+#in the original model. In other words, the numerical value of the intercept will be plotted on the x-axis. 
+#Make the graph as close to publication-ready as you can.
+# ---
+
+y_propbac <- census_wide_final_2015_2019$propbac
+x_medhhinc <- census_wide_final_2015_2019$medhhinc
+census_wide_data_2015_2019.lm.summary <- summary(census_wide_data_2015_2019.lm)
+intercept <- census_wide_data_2015_2019.lm.summary$coefficients[1,1]
+slope <- census_wide_data_2015_2019.lm.summary$coefficient[2,1]
+y_pred <- intercept + slope * x
+sse <- sum((y-y_pred)^2)
+sse
+slope
+
+
+intercept_iterations <- seq(from=intercept-1.5, to=intercept+1.5, by=0.1)
+loglik_simulated_list <- c()
+slope_iterations <- c()
+for (i in 1:length(intercept_iterations)) {
+  for(j in 1:nrow(census_wide_final_2015_2019)) {
+    y_pred_iterations[j] <- intercept_iterations[i] + slope * x_medhhinc[j]
+    
+    
+  }
+  
+  model_dataframe <- data.frame("Y" = c(y_pred_iterations),
+                              "X" = c(x_medhhinc))
+  
+  simulated.model.lm <- lm(model_dataframe$Y ~ model_dataframe$X)
+  
+  #calculate the Log-likelihood of the model
+  loglik_simulated_list[i] <- logLik(simulated.model.lm)
+}
+
+loglik_dataframe <- data.frame("Log_likelihood" = c(loglik_simulated_list),
+                            "Intercept" = c(intercept_iterations))
+
+
+#Plotted from distribution of SSE for different values of the intercept on MedHHIncome
+options(scipen = 999)
+plot(x=loglik_dataframe$Intercept, y=loglik_dataframe$Log_likelihood, 
+     pch = 16, cex = 0.8, col='steelblue',
+     main = "Distribution of Log-likelihood for different values of the intercept on MedHHIncome", 
+     xlab = "Intercept of MedHHIncome", 
+     ylab = "Log-likelihood",
+     type="o")
+abline(lm(propbac ~ medhhinc, data = census_wide_final_2015_2019), col="red", lty=2)
