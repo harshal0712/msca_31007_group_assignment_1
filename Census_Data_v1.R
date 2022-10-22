@@ -1,19 +1,25 @@
-###############################################################################################################################
+# ---
+# title: "MSCA 31007 Statistical Analysis - Group Assignment 1"
+# author: "Aashish Singh, Alexander Saucedo, Prinu Mathew, Nyckeisha' Sam, Qingwei Zhang"
+# date: "10/24/2022"
+# ---
 
-#Reference links
+# Reference links
+# https://walker-data.com/census-r/mapping-census-data-with-r.html
+# https://api.census.gov/data/2019/acs/acs5/profile/variables.html
+# https://walker-data.com/isds-webinar/#21
 
-#https://walker-data.com/census-r/mapping-census-data-with-r.html
-#https://api.census.gov/data/2019/acs/acs5/profile/variables.html
-#https://walker-data.com/isds-webinar/#21
+# ---
+# Perform Step 1 & Step 2
+# Install all required packages and install census api key
+# ---
 
-###############################################################################################################################
-
-##########################################STEP 1 & 2#####################################################################
-
-install.packages(c("tidycensus", "tidyverse", "gridExtra"))
-install.packages("lmtest")
-install.packages("nptest")
-install.packages("MASS")
+#install.packages(c("tidycensus", "tidyverse", "gridExtra"))
+#install.packages("lmtest")
+#install.packages("nptest")
+#install.packages("MASS")
+#install.packages("olsrr")
+library("olsrr")
 library(tidycensus)
 library(tidyverse)
 library(sf)           # Objects and functions for geospatial data
@@ -29,12 +35,14 @@ library(lmtest)
 library(nptest)
 library(MASS)
 
-#install the key for use in future R sessions
-census_api_key("0c4a2a2815a8d526966f2490024ef157e19478db", overwrite = TRUE, install = TRUE)
+# Enter Census API Key
+census_api_key("55b53f404b474d711439ed9420212277bb70f1b1", overwrite = TRUE, install = TRUE)
 
-##########################################STEP 3#####################################################################
-#Bring in tract-level data from the 2015-2019 American Community Survey 5-year estimates for Cook County, IL. 
-#Include the shapefile geometries, and format your output as a ‘wide’ table, not a ‘tidy’ table.
+# ---
+# Perform Step 3
+# Bring in tract-level data from the 2015-2019 American Community Survey 5-year estimates for Cook County, IL. 
+# Include the shapefile geometries, and format your output as a ‘wide’ table, not a ‘tidy’ table.
+# ---
 
 #*********** a) Define ACS variables *************************************
 acs_var <- c('DP05_0001E','DP05_0018E','DP03_0062E','DP02_0065PE','DP03_0096PE','DP03_0128PE','DP04_0047PE')
@@ -108,7 +116,7 @@ ggplot(data = census_wide_final_2015_2019, aes(fill = propbac)) +
         axis.text.y = element_blank(),
         axis.ticks = element_blank(),
         panel.background = element_rect(fill = "white", color = NA))
-  theme_minimal()
+theme_minimal()
 
 ##########################################STEP 5#####################################################################
 #Create a linear model object in which median household income explains baccalaureate
@@ -143,44 +151,61 @@ ggplot(census_wide_final_2015_2019, aes(x=medhhinc, y=propbac)) +
   theme(plot.title = element_text(hjust=0.5, size=20, face='bold')) 
 
 
-##########################################STEP 6#####################################################################
-#6) Restore the dataset, code, and linear model that you made last week. Test the residuals of the linear model for:
+# ---
+# Perform Step 6
+# Restore the dataset, code, and linear model that you made last week. Test the residuals of the linear model for:
+# a) Normality
+# b) Serial correlation
+# c) Heteroskedasticity
+# Use both plots and hypothesis tests to evaluate these assumptions and be prepared to discuss 
+# your findings. 
+# ---
 
-#a) Normality
+# a) Normality
 
-#Check the normality assumption is by creating a Q-Q plot
-plot(census_wide_data_2015_2019.lm)
+# Check the normality assumption by creating a Q-Q plot:
+ols_plot_resid_qq(census_wide_data_2015_2019.lm)
+# If the Q-Q plot forms a diagonal line, you can assume that the residuals follow a normal distribution.
+# And from the plot we can see that our linear model does not follow a diagonal line properly.
 
-#Create a Histogram of the Residuals
+# Let's plot a histogram of the residuals to observe this further:
 hist(census_wide_data_2015_2019.lm$residuals, main = "Residual Histogram of Baccalaureate Attainment Rate Model")
+# The histogram above shows there is a right skewness. Therefore, we conclude that residuals 
+# of our regression model does not follow a normal distribution.
 
-#Normality assumption is violated because residual are not normally distributed because it's more skewed towards right
-#More observations of lower baccalaureate attainment rate towards the residual zero for particular median household incomes
+# Also, using hypothesis testing to evalaute normality assumptions:
+# H0 -> The residuals follow a normal distribution
+# H1 -> The residual does not follow a normal distribution
+ols_test_normality(census_wide_data_2015_2019.lm)
+# As the data has more than 50 observation, We should use the Kolmogorov-Smirnov test to examine the normality of the residuals. 
+# Because the p-value is below 0.05, we reject the null hypothesis and conclude that the residuals do not follow a normal distribution.
 
 
-#b) Serial correlation
+# b) Serial correlation
 
-#H0 -> There is no first order serial correlation among the residuals
-#H1 -> There is first order serial correlation in residuals
-
+# Using hypothesis testing to evalaute serial correlation assumptions:
+# H0 -> There is no first order serial correlation among the residuals
+# H1 -> There is first order serial correlation in residuals
 dwtest(formula = census_wide_data_2015_2019.lm,  alternative = "two.sided")
+# Since p-value = 0.00559, which means p-value < 0.05, thus we reject the NULL hypothesis 
+# We conclude that there is serial correlation present.
 
-#Since p-value = 0.00559 is less the significance threshold (alpha) of 0.05, we reject NULL hypothesis and accept the alternative hypothesis 
 
+# c) Heteroskedasticity
 
-#c) Heteroskedasticity
-#Heteroscedasticity is the situation in which the variance of the residuals of a regression model is not the same across 
-#all values of the predicted variable
+# Heteroscedasticity is the situation in which the variance of the residuals of a regression model 
+# is not the same across all values of the predicted variable.
+# Check the heteroskedasticity assumption by creating a plot:
+plot(census_wide_data_2015_2019.lm,which = 1)
+# The plot shows a clear deviation from horizontal line meaning there is heteroscedasticity. 
 
-#H0 -> Residuals are distributed with equal variance (i.e homoscedasticity)
-#H1 -> Residuals are distributed with unequal variance (i.e heteroskedasticity)
-
+# Also, using hypothesis testing to evalaute heteroskedasticity assumptions:
+# H0 -> Residuals are distributed with equal variance (i.e homoscedasticity)
+# H1 -> Residuals are distributed with unequal variance (i.e heteroskedasticity)
 lmtest::bptest(census_wide_data_2015_2019.lm)
-
-#Since p-value < 2.2e-16 is less the significance threshold (alpha) of 0.05, we reject NULL hypothesis and accept the alternative hypothesis 
-
-
-#BASICALLY normality, serial correlation, heteroskedasticity assumptions are violated, hence the linear regression model is not the best fit for this data points
+# Since p-value < 2.2e-16 is less the significance threshold (alpha) of 0.05, 
+# we reject NULL hypothesis and  residuals are distributed with unequal variance
+# thus the residual distribution is heteroskedasticity.
 
 ##########################################STEP 7#####################################################################
 #Generate 10,000 samples of simulated tract-level household incomes, each the same size as your Cook County dataset. 
