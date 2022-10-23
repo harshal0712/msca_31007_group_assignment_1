@@ -39,7 +39,7 @@ library(MASS)
 library(fitdistrplus)
 
 # Enter Census API Key
-census_api_key("0c4a2a2815a8d526966f2490024ef157e19478db", overwrite = TRUE, install = TRUE)
+census_api_key("55b53f404b474d711439ed9420212277bb70f1b1", overwrite = TRUE, install = TRUE)
 
 
 # ---
@@ -238,7 +238,7 @@ ks.test(npbs_sample_correlations,pnorm,mean=-8.219608e-05,sd=2.736541e-02)
 str(census_wide_final_2015_2019)
 summary(census_wide_data_2015_2019.lm)
 
-#------------------------------------BEGIN Mathematically generating the regression line from actual data---------------------------#
+# Initialize variables that will be used in questions below
 y_propbac <- census_wide_final_2015_2019$propbac
 x_medhhinc <- census_wide_final_2015_2019$medhhinc
 census_wide_data_2015_2019.lm.summary <- summary(census_wide_data_2015_2019.lm)
@@ -246,7 +246,6 @@ actual_intercept <- census_wide_data_2015_2019.lm.summary$coefficients[1,1]
 actual_slope <- census_wide_data_2015_2019.lm.summary$coefficient[2,1]
 yhat_actual_regression_line <- actual_intercept + actual_slope * x_medhhinc
 actual_sse <- sum((y_propbac-yhat_actual_regression_line)^2)
-#------------------------------------END Mathematically generating the regression line from actual data---------------------------#
 
 # ---
 # Perform Step 10
@@ -268,7 +267,7 @@ for (i in 1:length(slope_iterations)) {
 sse_dataframe <- data.frame("Slope" = c(slope_iterations),
                             "SSE" = c(sse_iterations))
 
-#Plotted from distribution of SSE for different values of the slope on MedHHIncome
+# Plotting distribution of SSE for different values of the slope on MedHHIncome
 options(scipen = 999)
 plot(x=sse_dataframe$Slope, y=sse_dataframe$SSE, 
      pch = 16, cex = 0.8, col='steelblue',
@@ -286,28 +285,23 @@ abline(lm(propbac ~ medhhinc, data = census_wide_final_2015_2019), col="red", lt
 #Make the graph as close to publication-ready as you can.
 # ---
 
-intercept_iterations <- seq(from=actual_intercept-1.5, to=actual_intercept+1.5, by=0.1)
+# Now we want to keep the same slope and change value of intercept to see how Log_likelihood changes.
+intercept_iterations <- seq(from = actual_intercept-1.5, to = actual_intercept+1.5, by = 0.1)
 loglik_simulated_list <- c()
 slope_iterations <- c()
+errors <- c()
 for (i in 1:length(intercept_iterations)) {
   for(j in 1:nrow(census_wide_final_2015_2019)) {
     y_pred_iterations[j] <- intercept_iterations[i] + actual_slope * x_medhhinc[j]
+    errors[j] = y_propbac[j] - y_pred_iterations[j]
   }
-  
-  model_dataframe <- data.frame("Y" = c(y_pred_iterations),
-                              "X" = c(x_medhhinc))
-  
-  simulated.model.lm <- lm(model_dataframe$Y ~ model_dataframe$X)
-  
-  #calculate the Log-likelihood of the model
-  loglik_simulated_list[i] <- logLik(simulated.model.lm)
+  sigma = sd(errors)
+  loglik_simulated_list[i]  = sum(dnorm(errors, mean = 0, sd = sigma, log = TRUE))
 }
 
 loglik_dataframe <- data.frame("Log_likelihood" = c(loglik_simulated_list),
-                            "Intercept" = c(intercept_iterations))
-
-
-#Plotted from distribution of SSE for different values of the intercept on MedHHIncome
+                               "Intercept" = c(intercept_iterations))
+# Plotting distribution of Log_likelihood for different values of the intercept on MedHHIncome
 options(scipen = 999)
 plot(x=loglik_dataframe$Intercept, y=loglik_dataframe$Log_likelihood, 
      pch = 16, cex = 0.8, col='steelblue',
@@ -315,8 +309,7 @@ plot(x=loglik_dataframe$Intercept, y=loglik_dataframe$Log_likelihood,
      xlab = "Intercept of MedHHIncome", 
      ylab = "Log-likelihood",
      type="o")
-abline(lm(propbac ~ medhhinc, data = census_wide_final_2015_2019), col="red", lty=2)
-
+abline(h=logLik(lm(propbac ~ medhhinc, data = census_wide_final_2015_2019))[1], col="red", lty=2)
 
 
 # ---
@@ -374,8 +367,7 @@ ggplot() +
         panel.border = element_blank(), panel.grid.major = element_blank(), 
         panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),
         panel.background = element_rect(fill = "white", color = NA))
-  theme_minimal()
-  
+theme_minimal()
 
 #After applying ‘Robin Hood’ tax policy, even though the sum of squares (SSE_simulated_data = 99642.83) of the regression 
 #model from simulated median household income versus baccalaureate attainment rate is lesser than the sum of squares 
