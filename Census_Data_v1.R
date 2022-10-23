@@ -39,7 +39,7 @@ library(MASS)
 library(fitdistrplus)
 
 # Enter Census API Key
-census_api_key("55b53f404b474d711439ed9420212277bb70f1b1", overwrite = TRUE, install = TRUE)
+census_api_key("0c4a2a2815a8d526966f2490024ef157e19478db", overwrite = TRUE, install = TRUE)
 
 
 # ---
@@ -358,11 +358,11 @@ ggplot() +
               method='lm', formula= y~x, se=FALSE, color='#ff6600')  +
   labs(x='Median Household Income ($)', 
        y='Baccalaureate Attainment Rate (%)', 
-       title=sprintf("Tract-level Baccalaureate Attainment Rate vs Median Income\n
-       Simulated Adjusted R-squared: %s, Actual Adjusted R-squared: %s", 
-                     round(simulated.summary.lm.model$adj.r.squared, 4), 
-                     round(actual.summary.lm.model$adj.r.squared, 4)),
-       caption = "Data: 2015-2019 5-year ACS, US Census Bureau, Cook County, IL") +
+       title="Tract-level Baccalaureate Attainment Rate vs Median Income",
+       caption = "Data: 2015-2019 5-year ACS, US Census Bureau, Cook County, IL",
+       subtitle = sprintf("Simulated Adjusted R-squared: %s, Actual Adjusted R-squared: %s", 
+                          round(simulated.summary.lm.model$adj.r.squared, 4), 
+                          round(actual.summary.lm.model$adj.r.squared, 4))) +
   theme(plot.title = element_text(hjust=0.5, size=20, face='bold'), 
         panel.border = element_blank(), panel.grid.major = element_blank(), 
         panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),
