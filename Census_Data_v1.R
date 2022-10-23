@@ -246,7 +246,7 @@ actual_intercept <- census_wide_data_2015_2019.lm.summary$coefficients[1,1]
 actual_slope <- census_wide_data_2015_2019.lm.summary$coefficient[2,1]
 yhat_actual_regression_line <- actual_intercept + actual_slope * x_medhhinc
 actual_sse <- sum((y_propbac-yhat_actual_regression_line)^2)
-
+#------------------------------------END Mathematically generating the regression line from actual data---------------------------#
 
 # ---
 # Perform Step 10
