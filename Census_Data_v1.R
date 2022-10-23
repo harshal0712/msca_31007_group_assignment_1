@@ -354,15 +354,15 @@ simulated.summary.lm.model <- summary(simulated.lm.model)
 #Plotted regression line from actual versus simulated median household income versus baccalaureate attainment rate
 ggplot() +
   geom_point(data = census_wide_final_2015_2019, aes(x = medhhinc, y = propbac),
-             fill = "blue", color = "black",
+             fill = "#3399ff", color = "black",
              size= 5, shape = 21) +
-  geom_smooth(data = census_wide_final_2015_2019, aes(x = medhhinc, y = propbac, col="blue"),
-              method='lm', formula= y~x, se=FALSE, color='blue')  +
+  geom_smooth(data = census_wide_final_2015_2019, aes(x = medhhinc, y = propbac, col="#3399ff"),
+              method='lm', formula= y~x, se=FALSE, color='#3399ff')  +
   geom_point(data = census_wide_final_2015_2019_sorted, aes(x = simulated_medhhinc, y = propbac),
-             fill = "red", color = "black",
+             fill = "#ff6600", color = "black",
              size= 5, shape = 21) +
-  geom_smooth(data = census_wide_final_2015_2019_sorted, aes(x = simulated_medhhinc, y = propbac, col="red"),
-              method='lm', formula= y~x, se=FALSE, color='red')  +
+  geom_smooth(data = census_wide_final_2015_2019_sorted, aes(x = simulated_medhhinc, y = propbac, col="#ff6600"),
+              method='lm', formula= y~x, se=FALSE, color='#ff6600')  +
   labs(x='Median Household Income ($)', 
        y='Baccalaureate Attainment Rate (%)', 
        title=sprintf("Tract-level Baccalaureate Attainment Rate vs Median Income\n
