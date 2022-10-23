@@ -1,7 +1,8 @@
 # ---
 # title: "MSCA 31007 Statistical Analysis - Group Assignment 1"
 # author: "Aashish Singh, Alexander Saucedo, Prinu Mathew, Nyckeisha' Sam, Qingwei Zhang"
-# date: "10/24/2022"
+# start_date: "10/07/2022"
+# last_revision_date: "10/23/2022"
 # ---
 
 # Reference links
