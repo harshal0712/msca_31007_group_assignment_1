@@ -59,12 +59,9 @@ census_tidy_2015_2019 <- get_acs(
 
 # c) Drop the columns which report margin of error
 census_tidy_dropcols_2015_2019 <- census_tidy_2015_2019[,!(names(census_tidy_2015_2019) %in% "moe")]
-# Remove the rows from datafranme that contains at least one NA
-census_tidy_final_2015_2019 <- na.omit(census_tidy_dropcols_2015_2019)
 # Format your output as a ‘wide’ table, not a ‘tidy’ table
-census_wide_2015_2019 <- census_tidy_final_2015_2019 %>% 
+census_wide_2015_2019 <- census_tidy_dropcols_2015_2019 %>% 
   pivot_wider(names_from = 'variable', values_from = c('estimate'))
-
 
 # d) Rename the remaining columns
 # DP02_0065P -> propbac  (Bachelor's degree)
@@ -78,8 +75,6 @@ census_wide_final_2015_2019 <- census_wide_2015_2019 %>%
   rename('geoid' = 'GEOID', 'name' = 'NAME', 'propbac' = 'DP02_0065P', 
          'medhhinc' = 'DP03_0062', 'propcov' = 'DP03_0096P', 'proppov' = 'DP03_0128P', 
          'proprent' = 'DP04_0047P', 'totpop' = 'DP05_0001', 'medage' = 'DP05_0018')
-# Remove the rows from datafrane that contains at least one NA
-census_wide_final_2015_2019 <- na.omit(census_wide_final_2015_2019)
 
 
 # ---
@@ -114,8 +109,11 @@ ggplot(data = census_wide_final_2015_2019, aes(fill = propbac)) +
 # using the summary() command
 # ---
 
+# Remove the rows from dataframe that contains at least one NA
+census_wide_final_2015_2019 <- na.omit(census_wide_final_2015_2019)
 census_wide_data_2015_2019.lm <- lm(propbac ~ medhhinc, data = census_wide_final_2015_2019)
-summary(census_wide_data_2015_2019.lm)
+census_wide_data_2015_2019.lm.summary <- summary(census_wide_data_2015_2019.lm)
+census_wide_data_2015_2019.lm.summary
 
 # a) Create an x-y plot showing how median household income can help to explain baccalaureate attainment at the tract-level. 
 # Add the trend line suggested by your model. Feel free to use either base:: R commands such as plot() or tidyverse::
@@ -126,7 +124,9 @@ ggplot(census_wide_final_2015_2019, aes(x=medhhinc, y=propbac)) +
   theme_minimal() +
   labs(x='Median Household Income ($)', 
        y='Baccalaureate Attainment Rate (%)', 
-       title='Baccalaureate Attainment Rate vs Median Household Income') +
+       title='Baccalaureate Attainment Rate vs Median Household Income',
+       subtitle = sprintf("Adjusted R-squared: %s", 
+                          round(census_wide_data_2015_2019.lm.summary$adj.r.squared, 4))) +
   theme(plot.title = element_text(hjust=0.5, size=20, face='bold')) 
 
 
@@ -160,7 +160,7 @@ ols_test_normality(census_wide_data_2015_2019.lm)
 
 # b) Serial correlation
 # Let's check for serial correlation by plotting acf:
-acf(census_wide_data_2015_2019.lm$residuals, type = "correlation")
+plot(acf(census_wide_data_2015_2019.lm$residuals, type = "correlation"))
 # Using hypothesis testing to evalaute serial correlation assumptions:
 # H0 -> There is no first order serial correlation among the residuals
 # H1 -> There is first order serial correlation in residuals
@@ -172,10 +172,10 @@ dwtest(formula = census_wide_data_2015_2019.lm,  alternative = "two.sided")
 # Heteroscedasticity is the situation in which the variance of the residuals of a regression model 
 # is not the same across all values of the predicted variable.
 # Check the heteroskedasticity assumption by creating a plot:
-plot(census_wide_data_2015_2019.lm,which = 1)
+plot(census_wide_data_2015_2019.lm, which = 1)
 # The plot shows a clear deviation from horizontal line meaning there is heteroscedasticity. 
 
-# Also, using hypothesis testing to evalaute heteroskedasticity assumptions:
+# Also, using hypothesis testing to evaluate heteroskedasticity assumptions:
 # H0 -> Residuals are distributed with equal variance (i.e homoscedasticity)
 # H1 -> Residuals are distributed with unequal variance (i.e heteroskedasticity)
 lmtest::bptest(census_wide_data_2015_2019.lm)
@@ -208,7 +208,8 @@ census_wide_final_2015_2019 <- census_wide_final_2015_2019[,!(names(census_wide_
 # Let's get the actual correlation from original data frame
 actual_correlation_from_data <- cor(x=census_wide_final_2015_2019$propbac, y=census_wide_final_2015_2019$medhhinc)
 # Let's see what proportion of the 10,000 samples show a stronger correlation than actual correlation
-sum(actual_correlation_from_data < npbs_sample_correlations)/sample_size
+proportion <- sum(actual_correlation_from_data < npbs_sample_correlations)/sample_size
+proportion
 # Value of 0 means there is no stronger link between the (simulated) tract-level incomes and the (actual) tract-level baccalaureate attainment rates
 # What we are thinking is since true correlation is coming from true data source, generating sample correlation from sample data is not having 
 # stronger link between the (simulated) tract-level incomes and the (actual) tract-level baccalaureate attainment rates
@@ -228,7 +229,7 @@ plot(ecdf(npbs_sample_correlations.vector))
 # a) Identify the distribution of these correlations to the best of your ability. Be prepared to discuss the implications of 
 # these simulated correlations with respect to the possible presence of a link between income and educational achievement.
 fitdist(npbs_sample_correlations, "norm")
-ks.test(npbs_sample_correlations,pnorm,mean=-8.219608e-05,sd=2.736541e-02)
+ks.test(npbs_sample_correlations, pnorm, mean(npbs_sample_correlations), sd(npbs_sample_correlations))
 # The simulated data point is normally distributed.
 
 
@@ -376,4 +377,4 @@ theme_minimal()
 # To increase the percentage of baccalaureate attainment rate for lower median household income bracket, we need to 
 # increase drastically the income of lower income bracket households
 
-# Hence it's not realistic
+# Hence the ‘Robin Hood’ radical tax policy is not realistic in having any effect.
