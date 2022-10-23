@@ -315,21 +315,18 @@ abline(h=logLik(lm(propbac ~ medhhinc, data = census_wide_final_2015_2019))[1], 
 
 # ---
 # Perform Step 12
-#Consider a radical tax policy (call it the ‘Robin Hood’ tax) which would reduce the median household income in 
-#the 50 highest-earning tracts by $10,000, and increase the median household income in the 50 lowest-earning tracts 
-#by $10,000. What would the net effect on baccalaureate attainment be, according to the linear model? 
-#Do you consider this realistic? Does the data suggest any evidence for or against this theory?
+# Consider a radical tax policy (call it the ‘Robin Hood’ tax) which would reduce the median household income in 
+# the 50 highest-earning tracts by $10,000, and increase the median household income in the 50 lowest-earning tracts 
+# by $10,000. What would the net effect on baccalaureate attainment be, according to the linear model? 
+# Do you consider this realistic? Does the data suggest any evidence for or against this theory?
 # ---
 
-#sort the dataframe by column 'medhhinc' in descending order
+# Sort the dataframe by column 'medhhinc' in descending order
 census_wide_final_2015_2019_sorted <- census_wide_final_2015_2019 %>% arrange(desc(medhhinc))
-
-#Generate Row number or Row index to the dataframe using seq.int()
+# Generate Row number or Row index to the dataframe using seq.int()
 census_wide_final_2015_2019_sorted$row_num <- seq.int(nrow(census_wide_final_2015_2019_sorted))
-
 total_sample_size <- nrow(census_wide_final_2015_2019_sorted)
-
-#add column simulated_medhhinc based on 50 highest-earning tracts and 50 lowest-earning tracts
+# Add column simulated_medhhinc based on 50 highest-earning tracts and 50 lowest-earning tracts
 robin_hood_threadhold_income <- 10000
 robin_hood_threadhold_size <- 50
 census_wide_final_2015_2019_sorted <- census_wide_final_2015_2019_sorted %>%
@@ -341,11 +338,10 @@ census_wide_final_2015_2019_sorted <- census_wide_final_2015_2019_sorted %>%
 
 actual.lm.model <- lm(propbac ~ medhhinc, data = census_wide_final_2015_2019)
 actual.summary.lm.model <- summary(actual.lm.model)
-
 simulated.lm.model <- lm(propbac ~ simulated_medhhinc, data = census_wide_final_2015_2019_sorted)
 simulated.summary.lm.model <- summary(simulated.lm.model)
 
-#Plotted regression line from actual versus simulated median household income versus baccalaureate attainment rate
+# Plotting regression line from actual versus simulated median household income versus baccalaureate attainment rate
 ggplot() +
   geom_point(data = census_wide_final_2015_2019, aes(x = medhhinc, y = propbac),
              fill = "#3399ff", color = "black",
@@ -370,14 +366,14 @@ ggplot() +
         panel.background = element_rect(fill = "white", color = NA))
 theme_minimal()
 
-#After applying ‘Robin Hood’ tax policy, even though the sum of squares (SSE_simulated_data = 99642.83) of the regression 
-#model from simulated median household income versus baccalaureate attainment rate is lesser than the sum of squares 
-#(SSE_actual_data = 101495.9) of the regression model from actual median household income versus baccalaureate attainment 
-#rate, overall lesser percentage of baccalaureate attainment rate are still crowded at lower median household income 
-#irrespective of simulated versus actual data which tells clearly ‘Robin Hood’ tax policy has no impact on increasing 
-#the baccalaureate attainment rate especially for smaller portion of lower household income brackets
+# After applying ‘Robin Hood’ tax policy, even though the sum of squares (SSE_simulated_data = 99642.83) of the regression 
+# model from simulated median household income versus baccalaureate attainment rate is lesser than the sum of squares 
+# (SSE_actual_data = 101495.9) of the regression model from actual median household income versus baccalaureate attainment 
+# rate, overall lesser percentage of baccalaureate attainment rate are still crowded at lower median household income 
+# irrespective of simulated versus actual data which tells clearly ‘Robin Hood’ tax policy has no impact on increasing 
+# the baccalaureate attainment rate especially for smaller portion of lower household income brackets
 
-#To increase the percentage of baccalaureate attainment rate for lower median household income bracket, we need to 
-#increase drastically the income of lower income bracket households
+# To increase the percentage of baccalaureate attainment rate for lower median household income bracket, we need to 
+# increase drastically the income of lower income bracket households
 
-#Hence it's not realistic
+# Hence it's not realistic
