@@ -327,7 +327,6 @@ abline(lm(propbac ~ medhhinc, data = census_wide_final_2015_2019), col="red", lt
 #Do you consider this realistic? Does the data suggest any evidence for or against this theory?
 # ---
 
-
 #sort the dataframe by column 'medhhinc' in descending order
 census_wide_final_2015_2019_sorted <- census_wide_final_2015_2019 %>% arrange(desc(medhhinc))
 
@@ -346,32 +345,37 @@ census_wide_final_2015_2019_sorted <- census_wide_final_2015_2019_sorted %>%
     row_num >= (total_sample_size - robin_hood_threadhold_size) ~ medhhinc+robin_hood_threadhold_income
   ))
 
-#Plotted regression line from simulated median household income versus baccalaureate attainment rate
-ggplot(census_wide_final_2015_2019_sorted, aes(x=simulated_medhhinc, y=propbac)) +
-  geom_point(color='steelblue',) +
-  geom_smooth(method='lm', formula= y~x, se=FALSE, color='turquoise4')  +
-  labs(x='Simulated Median Household Income ($)', 
+actual.lm.model <- lm(propbac ~ medhhinc, data = census_wide_final_2015_2019)
+actual.summary.lm.model <- summary(actual.lm.model)
+
+simulated.lm.model <- lm(propbac ~ simulated_medhhinc, data = census_wide_final_2015_2019_sorted)
+simulated.summary.lm.model <- summary(simulated.lm.model)
+
+#Plotted regression line from actual versus simulated median household income versus baccalaureate attainment rate
+ggplot() +
+  geom_point(data = census_wide_final_2015_2019, aes(x = medhhinc, y = propbac),
+             fill = "blue", color = "black",
+             size= 5, shape = 21) +
+  geom_smooth(data = census_wide_final_2015_2019, aes(x = medhhinc, y = propbac, col="blue"),
+              method='lm', formula= y~x, se=FALSE, color='blue')  +
+  geom_point(data = census_wide_final_2015_2019_sorted, aes(x = simulated_medhhinc, y = propbac),
+             fill = "red", color = "black",
+             size= 5, shape = 21) +
+  geom_smooth(data = census_wide_final_2015_2019_sorted, aes(x = simulated_medhhinc, y = propbac, col="red"),
+              method='lm', formula= y~x, se=FALSE, color='red')  +
+  labs(x='Median Household Income ($)', 
        y='Baccalaureate Attainment Rate (%)', 
-       title='Tract-level Baccalaureate Attainment Rate') +
+       title=sprintf("Tract-level Baccalaureate Attainment Rate vs Median Income\n
+       Simulated Adjusted R-squared: %s, Actual Adjusted R-squared: %s", 
+                     round(simulated.summary.lm.model$adj.r.squared, 4), 
+                     round(actual.summary.lm.model$adj.r.squared, 4)),
+       caption = "Data: 2015-2019 5-year ACS, US Census Bureau, Cook County, IL") +
   theme(plot.title = element_text(hjust=0.5, size=20, face='bold'), 
         panel.border = element_blank(), panel.grid.major = element_blank(), 
         panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),
         panel.background = element_rect(fill = "white", color = NA))
-theme_minimal()
-
-#Plotted regression line from actual median household income versus baccalaureate attainment rate
-ggplot(census_wide_final_2015_2019, aes(x=medhhinc, y=propbac)) +
-  geom_point(color='steelblue',) +
-  geom_smooth(method='lm', formula= yhat_actual_regression_line~x, se=FALSE, color='turquoise4')  +
-  labs(x='Actual Median Household Income ($)', 
-       y='Baccalaureate Attainment Rate (%)', 
-       title='Tract-level Baccalaureate Attainment Rate') +
-  theme(plot.title = element_text(hjust=0.5, size=20, face='bold'), 
-        panel.border = element_blank(), panel.grid.major = element_blank(), 
-        panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),
-        panel.background = element_rect(fill = "white", color = NA))
-theme_minimal()
-
+  theme_minimal()
+  
 
 #After applying ‘Robin Hood’ tax policy, even though the sum of squares (SSE_simulated_data = 99642.83) of the regression 
 #model from simulated median household income versus baccalaureate attainment rate is lesser than the sum of squares 
